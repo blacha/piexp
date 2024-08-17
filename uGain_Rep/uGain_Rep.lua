@@ -26,7 +26,14 @@ local function uRep_StandingText(standingId)
 end
 
 local function uRep_ReportFaction(factionIndex)
-    local name, _, standingId, barMin, barMax, currentRep, _, _, isHeader = GetFactionInfo(factionIndex)
+    local name, standingId, barMin, barMax, currentRep, isHeader
+    if GetFactionInfo then
+        name, _, standingId, barMin, barMax, currentRep, _, _, isHeader = GetFactionInfo(factionIndex)
+    else
+        local factionData = C_Reputation.GetFactionDataByIndex(factionIndex)
+        name, standingId, barMin, barMax, currentRep, isHeader = factionData.name, factionData.reaction, factionData.currentReactionThreshold, factionData.nextReactionThreshold, factionData.currentStanding, factionData.isHeader
+    end
+    
     if isHeader then
         return nil
     end
@@ -80,10 +87,20 @@ end
 
 local function uRep_LoadFactions()
     local oldFactionCount = FactionCount
-    FactionCount = GetNumFactions()
+    if GetNumFactions then
+        FactionCount = GetNumFactions()
+    else
+        FactionCount = C_Reputation.GetNumFactions()
+    end
 
     for i = 1, FactionCount do
-        local name, _, standingId, _, barMax, currentRep, _, _, isHeader = GetFactionInfo(i)
+        local name, standingId, barMax, currentRep, isHeader
+        if GetFactionInfo then
+            name, _, standingId, _, barMax, currentRep, _, _, isHeader = GetFactionInfo(i)
+        else
+            local factionData = C_Reputation.GetFactionDataByIndex(i)
+            name, standingId, barMax, currentRep, isHeader = factionData.name, factionData.reaction, factionData.nextReactionThreshold, factionData.currentStanding, factionData.isHeader
+        end
         local oldFaction = Factions[name]
         if oldFaction == nil and oldFactionCount > 0 and (not isHeader) then
             local factionChangeMessage = "Faction " .. uC(name, C.yellow) .. " found at " .. " " ..
@@ -99,7 +116,13 @@ local function uRep_LoadFactions()
 end
 
 local function uRep_ScanAndReport()
-    local currentFactionCount = GetNumFactions()
+    local currentFactionCount
+    if GetNumFactions then
+        currentFactionCount = GetNumFactions()
+    else
+        currentFactionCount = C_Reputation.GetNumFactions()
+    end
+    
     if (currentFactionCount ~= FactionCount) then
         return uRep_LoadFactions()
     end
